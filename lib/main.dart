@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'riwayat.dart';
+import 'profile.dart';
+import 'sinkronisasi.dart';
 
 void main() {
   runApp(const MainApp());
@@ -38,6 +41,9 @@ class MainApp extends StatelessWidget {
         '/home': (_) => const HomeScreen(),
         '/tasks': (_) => const TaskListScreen(),
         '/input': (_) => const InputDataScreen(),
+        '/riwayat': (_) => const RiwayatScreen(),
+        '/profile': (_) => const ProfileScreen(),
+        '/sinkronisasi': (_) => const SinkronisasiScreen(),
       },
     );
   }
@@ -151,116 +157,154 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        title: const Text(
-          'Dashboard',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: CircleAvatar(
-              backgroundColor: Color(0xFFDCE8FF),
-              child: Icon(Icons.person_outline, color: Color(0xFF1F4E9A)),
+      body: Column(
+        children: [
+          // Header dengan nama dan profile
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF1368D6), Color(0xFF0D47A1)],
+              ),
+            ),
+            child: SafeArea(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Hi, Carl',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Selamat Datang',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFFE0E7FF),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, '/profile'),
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x40000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.person,
+                        color: Color(0xFF1368D6),
+                        size: 28,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Body content
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  // Status Card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0AA06E), Color(0xFF20C997)],
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.check_circle_outline, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text(
+                              'Online',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          '10 Data Pending',
+                          style: TextStyle(color: Color(0xFFEFFFF8)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  // Menu Grid
+                  Expanded(
+                    child: GridView.count(
+                      crossAxisCount: 2,
+                      childAspectRatio: 1.12,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      children: [
+                        _MenuTile(
+                          title: 'Daftar Tugas',
+                          icon: Icons.assignment_outlined,
+                          color: const Color(0xFF1368D6),
+                          onTap: () => Navigator.pushNamed(context, '/tasks'),
+                        ),
+                        _MenuTile(
+                          title: 'Input Pelanggan',
+                          icon: Icons.edit_document,
+                          color: const Color(0xFF0AA06E),
+                          onTap: () => Navigator.pushNamed(context, '/input'),
+                        ),
+                        _MenuTile(
+                          title: 'Riwayat',
+                          icon: Icons.history,
+                          color: const Color(0xFFF08A00),
+                          onTap: () => Navigator.pushNamed(context, '/riwayat'),
+                        ),
+                        _MenuTile(
+                          title: 'Sinkronisasi',
+                          icon: Icons.sync,
+                          color: const Color(0xFF6756E8),
+                          onTap: () => Navigator.pushNamed(context, '/sinkronisasi'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Hi, Carl',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
-            ),
-            const Text(
-              'Selamat Datang',
-              style: TextStyle(color: Color(0xFF4D6180)),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF0AA06E), Color(0xFF20C997)],
-                ),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.check_circle_outline, color: Colors.white),
-                      SizedBox(width: 8),
-                      Text(
-                        'Online',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    '10 Data Pending',
-                    style: TextStyle(color: Color(0xFFEFFFF8)),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                childAspectRatio: 1.12,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                children: [
-                  _MenuTile(
-                    title: 'Daftar Tugas',
-                    icon: Icons.assignment_outlined,
-                    color: const Color(0xFF1368D6),
-                    onTap: () => Navigator.pushNamed(context, '/tasks'),
-                  ),
-                  _MenuTile(
-                    title: 'Input Pelanggan',
-                    icon: Icons.edit_document,
-                    color: const Color(0xFF0AA06E),
-                    onTap: () => Navigator.pushNamed(context, '/input'),
-                  ),
-                  _MenuTile(
-                    title: 'Riwayat',
-                    icon: Icons.history,
-                    color: const Color(0xFFF08A00),
-                    onTap: () => _showSoon(context),
-                  ),
-                  _MenuTile(
-                    title: 'Sinkronisasi',
-                    icon: Icons.sync,
-                    color: const Color(0xFF6756E8),
-                    onTap: () => _showSoon(context),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
-  }
-
-  void _showSoon(BuildContext context) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Fitur sedang disiapkan.')));
   }
 }
 

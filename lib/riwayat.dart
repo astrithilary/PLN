@@ -109,7 +109,7 @@ class _RiwayatScreenState extends State<RiwayatScreen>
       body: ListView.separated(
         padding: const EdgeInsets.all(12),
         itemCount: _getFilteredItems().length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
           final item = _getFilteredItems()[index];
           return _RiwayatItemWidget(item: item);

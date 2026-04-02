@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'db_helper.dart';
 
 class RiwayatScreen extends StatefulWidget {
   const RiwayatScreen({super.key});
@@ -11,44 +12,28 @@ class _RiwayatScreenState extends State<RiwayatScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // Sample data - replace dengan data sebenarnya dari API/database
-  final List<_RiwayatItem> allItems = [
-    const _RiwayatItem(
-      name: 'Elisabeth Anggraeni',
-      date: '20 Jan 2025',
-      status: 'Sync',
-      statusColor: Color(0xFF10B981),
-    ),
-    const _RiwayatItem(
-      name: 'Elisabeth Anggraeni',
-      date: '20 Jan 2025',
-      status: 'Pending',
-      statusColor: Color(0xFFEEC000),
-    ),
-    const _RiwayatItem(
-      name: 'Elisabeth Anggraeni',
-      date: '20 Jan 2025',
-      status: 'Sync',
-      statusColor: Color(0xFF10B981),
-    ),
-    const _RiwayatItem(
-      name: 'Elisabeth Anggraeni',
-      date: '20 Jan 2025',
-      status: 'Sync',
-      statusColor: Color(0xFF10B981),
-    ),
-    const _RiwayatItem(
-      name: 'Elisabeth Anggraeni',
-      date: '20 Jan 2025',
-      status: 'Pending',
-      statusColor: Color(0xFFEEC000),
-    ),
-  ];
+  late Future<List<_RiwayatItem>> allItemsFuture;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    allItemsFuture = _loadItems();
+  }
+
+  Future<List<_RiwayatItem>> _loadItems() async {
+    final rows = await DbHelper.instance.getPelanggan();
+    return rows.map((r) {
+      final status = r['status_sinkron'] == 1 ? 'Sync' : 'Pending';
+      return _RiwayatItem(
+        name: r['nama']?.toString() ?? '-',
+        date: r['id_pelanggan']?.toString() ?? '-',
+        status: status,
+        statusColor: status == 'Sync'
+            ? const Color(0xFF10B981)
+            : const Color(0xFFEEC000),
+      );
+    }).toList();
   }
 
   @override
@@ -57,18 +42,14 @@ class _RiwayatScreenState extends State<RiwayatScreen>
     super.dispose();
   }
 
-  List<_RiwayatItem> _getFilteredItems() {
+  List<_RiwayatItem> _getFilteredItems(List<_RiwayatItem> allItems) {
     final selectedTab = _tabController.index;
     if (selectedTab == 0) {
-      return allItems; // Semua
+      return allItems;
     } else if (selectedTab == 1) {
-      return allItems
-          .where((item) => item.status == 'Pending')
-          .toList(); // Pending
+      return allItems.where((item) => item.status == 'Pending').toList();
     } else {
-      return allItems
-          .where((item) => item.status == 'Sync')
-          .toList(); // Sync
+      return allItems.where((item) => item.status == 'Sync').toList();
     }
   }
 
@@ -81,10 +62,7 @@ class _RiwayatScreenState extends State<RiwayatScreen>
         foregroundColor: Colors.white,
         title: const Text(
           'Riwayat',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -106,13 +84,31 @@ class _RiwayatScreenState extends State<RiwayatScreen>
           ],
         ),
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(12),
-        itemCount: _getFilteredItems().length,
-        separatorBuilder: (_, _) => const SizedBox(height: 10),
-        itemBuilder: (context, index) {
-          final item = _getFilteredItems()[index];
-          return _RiwayatItemWidget(item: item);
+      body: FutureBuilder<List<_RiwayatItem>>(
+        future: allItemsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          final items = snapshot.data ?? [];
+          final filteredItems = _getFilteredItems(items);
+
+          if (filteredItems.isEmpty) {
+            return const Center(child: Text('Tidak ada riwayat data.'));
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(12),
+            itemCount: filteredItems.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              final item = filteredItems[index];
+              return _RiwayatItemWidget(item: item);
+            },
+          );
         },
       ),
     );
@@ -155,10 +151,7 @@ class _RiwayatItemWidget extends StatelessWidget {
             children: [
               Text(
                 item.date,
-                style: const TextStyle(
-                  color: Color(0xFF6B7280),
-                  fontSize: 13,
-                ),
+                style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
               ),
               const Spacer(),
               Container(

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'api_service.dart';
+import 'db_helper.dart';
 
 class SinkronisasiScreen extends StatefulWidget {
   const SinkronisasiScreen({super.key});
@@ -12,6 +14,8 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
   bool _isSyncing = false;
   double _progress = 0.0;
   late AnimationController _animationController;
+  int _pendingCount = 0;
+  int _syncedCount = 0;
 
   @override
   void initState() {
@@ -20,6 +24,17 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
       duration: const Duration(seconds: 1),
       vsync: this,
     );
+    _refreshCounts();
+  }
+
+  Future<void> _refreshCounts() async {
+    final pending = await DbHelper.instance.getPelangganByStatus(0);
+    final synced = await DbHelper.instance.getPelangganByStatus(1);
+    if (!mounted) return;
+    setState(() {
+      _pendingCount = pending.length;
+      _syncedCount = synced.length;
+    });
   }
 
   @override
@@ -28,41 +43,81 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
     super.dispose();
   }
 
-  void _startSyncProcess() {
+  void _startSyncProcess() async {
+    final pendingRows = await DbHelper.instance.getPelangganByStatus(0);
+    if (pendingRows.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tidak ada data pending untuk disinkronkan.'),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isSyncing = true;
       _progress = 0.0;
     });
 
-    // Simulate sync process
-    _simulateSync();
+    // Sync ke API Laravel
+    await _syncToServer(pendingRows);
+
+    if (!mounted) return;
+    await _refreshCounts();
+
+    if (mounted) {
+      _showSuccessModal();
+    }
   }
 
-  void _simulateSync() async {
-    // Increment progress gradually
-    for (int i = 0; i <= 100; i += 10) {
-      if (!_isSyncing) break; // Cancel if user stops
+  Future<void> _syncToServer(List<Map<String, dynamic>> pendingRows) async {
+    int totalItems = pendingRows.length;
+    int processedItems = 0;
 
-      await Future.delayed(const Duration(milliseconds: 400));
-      
-      if (mounted && _isSyncing) {
+    for (var row in pendingRows) {
+      if (!_isSyncing) break;
+
+      try {
+        // Kirim data ke API Laravel
+        final success = await ApiService.savePelanggan(row);
+
+        if (success) {
+          // Jika ada foto, upload juga
+          if (row['foto_path'] != null && row['foto_path'].isNotEmpty) {
+            final fotoUploaded = await ApiService.uploadFoto(
+              row['foto_path'],
+              row['id'] as int,
+            );
+            if (fotoUploaded != null) {
+              print('Foto berhasil diupload: $fotoUploaded');
+            }
+          }
+
+          // Update status_sinkron = 1 di lokal
+          await DbHelper.instance.updatePelangganStatus(row['id'] as int, 1);
+          processedItems++;
+        }
+      } catch (e) {
+        print('Error saat sync: $e');
+      }
+
+      // Update progress
+      if (mounted) {
         setState(() {
-          _progress = i / 100;
+          _progress = processedItems / totalItems;
         });
       }
+
+      await Future.delayed(const Duration(milliseconds: 300));
     }
 
-    // Set progress to 100% at the end
-    if (mounted && _isSyncing) {
+    // Selesai
+    if (mounted) {
       setState(() {
         _progress = 1.0;
       });
-
-      // Show success modal after 1 second
       await Future.delayed(const Duration(seconds: 1));
-      if (mounted) {
-        _showSuccessModal();
-      }
     }
   }
 
@@ -77,9 +132,7 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -111,10 +164,7 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
               const Text(
                 'Semua data telah tersinkronisasi dengan server',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF6B7280),
-                ),
+                style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -166,10 +216,7 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
         foregroundColor: Colors.white,
         title: const Text(
           'Sinkronisasi',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -193,7 +240,7 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
                 Expanded(
                   child: _StatusCard(
                     title: 'Pending',
-                    count: '10',
+                    count: _pendingCount.toString(),
                     color: const Color(0xFFEEC000),
                   ),
                 ),
@@ -201,7 +248,7 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
                 Expanded(
                   child: _StatusCard(
                     title: 'Berhasil',
-                    count: '5',
+                    count: _syncedCount.toString(),
                     color: const Color(0xFF10B981),
                   ),
                 ),
@@ -322,10 +369,7 @@ class _StatusCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withValues(alpha: 0.25),
-          width: 1.5,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.25), width: 1.5),
         boxShadow: const [
           BoxShadow(
             color: Color(0x150A2540),
@@ -351,10 +395,7 @@ class _StatusCard extends StatelessWidget {
               Container(
                 width: 8,
                 height: 8,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: color,
-                ),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: color),
               ),
               const SizedBox(width: 6),
               Text(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'task_item.dart';
 
 class TaskListScreen extends StatelessWidget {
   const TaskListScreen({super.key});
@@ -6,22 +7,22 @@ class TaskListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tasks = [
-      const _TaskItem(
+      const TaskItem(
         'Elisabeth Anggraeni',
         'Jl. arimadidi atas blok C No.44',
         true,
       ),
-      const _TaskItem(
+      const TaskItem(
         'Elisabeth Anggraeni',
         'Jl. arimadidi atas blok C No.44',
         false,
       ),
-      const _TaskItem(
+      const TaskItem(
         'Elisabeth Anggraeni',
         'Jl. arimadidi atas blok C No.44',
         false,
       ),
-      const _TaskItem(
+      const TaskItem(
         'Elisabeth Anggraeni',
         'Jl. arimadidi atas blok C No.44',
         false,
@@ -127,12 +128,4 @@ class TaskListScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-class _TaskItem {
-  const _TaskItem(this.name, this.address, this.isDone);
-
-  final String name;
-  final String address;
-  final bool isDone;
 }

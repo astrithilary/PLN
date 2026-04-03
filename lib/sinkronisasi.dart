@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'api_service.dart';
 import 'db_helper.dart';
 
@@ -11,6 +12,7 @@ class SinkronisasiScreen extends StatefulWidget {
 
 class _SinkronisasiScreenState extends State<SinkronisasiScreen>
     with TickerProviderStateMixin {
+  final Logger _logger = Logger();
   bool _isSyncing = false;
   double _progress = 0.0;
   late AnimationController _animationController;
@@ -90,7 +92,7 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
               row['id'] as int,
             );
             if (fotoUploaded != null) {
-              print('Foto berhasil diupload: $fotoUploaded');
+              _logger.i('Foto berhasil diupload: $fotoUploaded');
             }
           }
 
@@ -99,7 +101,7 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
           processedItems++;
         }
       } catch (e) {
-        print('Error saat sync: $e');
+        _logger.e('Error saat sync: $e');
       }
 
       // Update progress

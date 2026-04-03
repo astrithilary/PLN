@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 
 class ApiService {
+  static final Logger _logger = Logger();
   // GANTI '192.168.1.XX' dengan IP Laptop Anda yang muncul di ipconfig
   static const String baseUrl = 'http://192.168.1.8:8000/api';
 
@@ -34,7 +36,7 @@ class ApiService {
 
       return (response.statusCode == 200 || response.statusCode == 201);
     } catch (e) {
-      print('Error API: $e');
+      _logger.e('Error API: $e');
       return false;
     }
   }
@@ -62,7 +64,7 @@ class ApiService {
           successfulIds.add(data['id'] as int);
         }
       } catch (e) {
-        print('Error saat send batch: $e');
+        _logger.e('Error saat send batch: $e');
       }
     }
 
@@ -86,11 +88,11 @@ class ApiService {
         var jsonResponse = jsonDecode(responseData);
         return jsonResponse['foto_path'];
       } else {
-        print('Upload failed: ${response.statusCode}');
+        _logger.w('Upload failed: ${response.statusCode}');
         return null;
       }
     } catch (e) {
-      print('Error upload foto: $e');
+      _logger.e('Error upload foto: $e');
       return null;
     }
   }

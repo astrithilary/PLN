@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -108,24 +109,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _logout() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Logout'),
         content: const Text('Apakah Anda yakin ingin keluar?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Batal'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFF08A00),
             ),
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/');
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Logout berhasil')),
-              );
+            onPressed: () async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove('auth_token');
+              await prefs.remove('username');
+
+              if (!dialogContext.mounted) return;
+              Navigator.pop(dialogContext);
+
+              if (!mounted) return;
+              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Logout berhasil')));
             },
             child: const Text('Logout'),
           ),
@@ -221,7 +229,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.circle, size: 8, color: Color(0xFF10B981)),
+                      const Icon(
+                        Icons.circle,
+                        size: 8,
+                        color: Color(0xFF10B981),
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         _profile.status,
@@ -444,10 +456,7 @@ class _ProfileInfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withValues(alpha: 0.2),
-          width: 1.5,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 1.5),
         boxShadow: const [
           BoxShadow(
             color: Color(0x150A2540),
@@ -530,12 +539,12 @@ class _EditTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Color(0xFF1368D6),
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: Color(0xFF1368D6), width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 14,
+          horizontal: 12,
+        ),
       ),
     );
   }

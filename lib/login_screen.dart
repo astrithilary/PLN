@@ -1,8 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'custom_form_field.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _handleLogin() async {
+    if (_formKey.currentState!.validate()) {
+      // Simulasi login berhasil, simpan token token caching (offline-first)
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auth_token', 'dummy_jwt_token_12345');
+      await prefs.setString('username', _usernameController.text);
+
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/home');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,83 +56,103 @@ class LoginScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(28),
                   border: Border.all(color: Colors.white24),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFDD00),
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x50FFE66D),
-                            blurRadius: 16,
-                            offset: Offset(0, 8),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFDD00),
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x50FFE66D),
+                              blurRadius: 16,
+                              offset: Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.bolt,
+                          size: 38,
+                          color: Color(0xFF1458B0),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'PLN Survey App',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Masuk untuk mulai tugas lapangan',
+                        style: TextStyle(color: Color(0xFFE8F2FF)),
+                      ),
+                      const SizedBox(height: 24),
+                      CustomFormField(
+                        hint: 'Username',
+                        icon: Icons.person_outline,
+                        controller: _usernameController,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Username tidak boleh kosong';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      CustomFormField(
+                        hint: 'Password',
+                        icon: Icons.lock_outline,
+                        obscure: true,
+                        controller: _passwordController,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Password tidak boleh kosong';
+                          }
+                          if (value.length < 6) {
+                            return 'Password minimal 6 karakter';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFFFFDD00),
+                            foregroundColor: const Color(0xFF0E2A4A),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.bolt,
-                        size: 38,
-                        color: Color(0xFF1458B0),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'PLN Survey App',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Masuk untuk mulai tugas lapangan',
-                      style: TextStyle(color: Color(0xFFE8F2FF)),
-                    ),
-                    const SizedBox(height: 24),
-                    const CustomFormField(
-                      hint: 'Username',
-                      icon: Icons.person_outline,
-                    ),
-                    const SizedBox(height: 12),
-                    const CustomFormField(
-                      hint: 'Password',
-                      icon: Icons.lock_outline,
-                      obscure: true,
-                    ),
-                    const SizedBox(height: 18),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFFFDD00),
-                          foregroundColor: const Color(0xFF0E2A4A),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                          onPressed: _handleLogin,
+                          child: const Text(
+                            'Login',
+                            style: TextStyle(fontWeight: FontWeight.w700),
                           ),
                         ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextButton(
                         onPressed: () =>
-                            Navigator.pushReplacementNamed(context, '/home'),
+                            Navigator.pushNamed(context, '/signup'),
                         child: const Text(
-                          'Login',
-                          style: TextStyle(fontWeight: FontWeight.w700),
+                          'Belum punya akun? Daftar',
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextButton(
-                      onPressed: () => Navigator.pushNamed(context, '/signup'),
-                      child: const Text(
-                        'Belum punya akun? Daftar',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -10,6 +10,34 @@ class ApiService {
   // Endpoint disesuaikan dengan Route::post('/sync-pelanggan') di Laravel tadi
   static const String endpoint = '$baseUrl/sync-pelanggan';
 
+  static Future<Map<String, dynamic>?> login(
+    String username,
+    String password,
+  ) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/login'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({'username': username, 'password': password}),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        _logger.w('Login failed: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      _logger.e('Error login API: $e');
+      return null;
+    }
+  }
+
   static Future<bool> savePelanggan(Map<String, dynamic> data) async {
     try {
       final response = await http
@@ -93,6 +121,38 @@ class ApiService {
       }
     } catch (e) {
       _logger.e('Error upload foto: $e');
+      return null;
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>?> fetchTugas() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/tugas'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is List) {
+          // Asumsikan data adalah list of objects
+          return List<Map<String, dynamic>>.from(data);
+        } else if (data['data'] != null && data['data'] is List) {
+          // Asumsikan data dibungkus di key 'data'
+          return List<Map<String, dynamic>>.from(data['data']);
+        }
+        return [];
+      } else {
+        _logger.w('Fetch tugas failed: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      _logger.e('Error fetch tugas API: $e');
       return null;
     }
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'api_service.dart';
 import 'custom_form_field.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -23,13 +25,52 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-      // Simulasi login berhasil, simpan token token caching (offline-first)
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('auth_token', 'dummy_jwt_token_12345');
-      await prefs.setString('username', _usernameController.text);
+      // Cek koneksi
+      final connectivityResult = await Connectivity().checkConnectivity();
+      final bool isOnline =
+          connectivityResult.contains(ConnectivityResult.mobile) ||
+          connectivityResult.contains(ConnectivityResult.wifi) ||
+          connectivityResult.contains(ConnectivityResult.ethernet);
 
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/home');
+
+      if (!isOnline) {
+        // [Offline] Error intranet
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Error intranet')));
+        return;
+      }
+
+      // [Online] Kirim kredensial
+      final username = _usernameController.text;
+      final password = _passwordController.text;
+
+      final response = await ApiService.login(username, password);
+
+      if (!mounted) return;
+
+      if (response != null &&
+          (response['token'] != null || response['access_token'] != null)) {
+        // Simpan token
+        final token = response['token'] ?? response['access_token'];
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_token', token);
+
+        // Asumsi data user ada di response, simpan username atau data lain yang diperlukan
+        // final userData = response['user'];
+        await prefs.setString('username', username);
+
+        if (!mounted) return;
+        // Ke Dashboard
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login gagal. Periksa kembali kredensial Anda.'),
+          ),
+        );
+      }
     }
   }
 

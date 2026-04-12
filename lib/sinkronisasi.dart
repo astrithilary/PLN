@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'api_service.dart';
 import 'db_helper.dart';
 
@@ -46,6 +47,23 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
   }
 
   void _startSyncProcess() async {
+    // 1. Cek Koneksi
+    final connectivityResult = await Connectivity().checkConnectivity();
+    final bool isOnline =
+        connectivityResult.contains(ConnectivityResult.mobile) ||
+        connectivityResult.contains(ConnectivityResult.wifi) ||
+        connectivityResult.contains(ConnectivityResult.ethernet);
+
+    if (!isOnline) {
+      // [Offline]
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Tidak ada koneksi')));
+      return;
+    }
+
+    // [Online]
     final pendingRows = await DbHelper.instance.getPelangganByStatus(0);
     if (pendingRows.isEmpty) {
       if (!mounted) return;
@@ -62,7 +80,7 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
       _progress = 0.0;
     });
 
-    // Sync ke API Laravel
+    // Loop Sync ke API Laravel
     await _syncToServer(pendingRows);
 
     if (!mounted) return;

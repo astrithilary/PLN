@@ -99,6 +99,7 @@ class DbHelper {
   static const _databaseName = 'pln_survey.db';
   static const _databaseVersion = 1;
   static const tablePelanggan = 'pelanggan';
+  static const tableTugas = 'tugas';
 
   DbHelper._privateConstructor();
   static final DbHelper instance = DbHelper._privateConstructor();
@@ -142,6 +143,15 @@ class DbHelper {
         no_hp TEXT,
         foto_path TEXT,
         status_sinkron INTEGER
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE $tableTugas (
+        id INTEGER PRIMARY KEY,
+        nama_pelanggan TEXT,
+        alamat TEXT,
+        status INTEGER
       )
     ''');
   }
@@ -262,6 +272,39 @@ class DbHelper {
     } else {
       final db = await database;
       return await db.delete(tablePelanggan, where: 'id = ?', whereArgs: [id]);
+    }
+  }
+
+  // --- Operasi Table Tugas ---
+  Future<void> saveBatchTugas(List<Map<String, dynamic>> listTugas) async {
+    if (kIsWeb) {
+      _mockDatabase ??= MockDatabase();
+      await _mockDatabase!.delete(tableTugas); // Delete all mock tugas
+      for (var tugas in listTugas) {
+        await _mockDatabase!.insert(tableTugas, tugas);
+      }
+    } else {
+      final db = await database;
+      await db.transaction((txn) async {
+        await txn.delete(tableTugas); // Hapus cache sebelumnya
+        for (var tugas in listTugas) {
+          await txn.insert(
+            tableTugas,
+            tugas,
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+      });
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getTugas() async {
+    if (kIsWeb) {
+      _mockDatabase ??= MockDatabase();
+      return await _mockDatabase!.query(tableTugas);
+    } else {
+      final db = await database;
+      return await db.query(tableTugas);
     }
   }
 }

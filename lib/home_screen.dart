@@ -1,7 +1,62 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'db_helper.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String _username = 'User';
+  int _pendingCount = 0;
+  bool _isOnline = false;
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+    _initConnectivity();
+  }
+
+  void _initConnectivity() async {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    _updateConnectionStatus(connectivityResult);
+
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
+      _updateConnectionStatus,
+    );
+  }
+
+  void _updateConnectionStatus(List<ConnectivityResult> result) {
+    setState(() {
+      _isOnline =
+          result.contains(ConnectivityResult.mobile) ||
+          result.contains(ConnectivityResult.wifi) ||
+          result.contains(ConnectivityResult.ethernet);
+    });
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final pendingRows = await DbHelper.instance.getPelangganByStatus(0);
+
+    setState(() {
+      _username = prefs.getString('username') ?? 'User';
+      _pendingCount = pendingRows.length;
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +79,9 @@ class HomeScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Hi, Carl',
-                          style: TextStyle(
+                        Text(
+                          'Hi, $_username',
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
@@ -81,24 +136,28 @@ class HomeScreen extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF0AA06E), Color(0xFF20C997)],
+                      gradient: LinearGradient(
+                        colors: _isOnline
+                            ? const [Color(0xFF0AA06E), Color(0xFF20C997)]
+                            : const [Color(0xFFE53935), Color(0xFFE35D5B)],
                       ),
                       borderRadius: BorderRadius.circular(18),
                     ),
-                    child: const Column(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
                             Icon(
-                              Icons.check_circle_outline,
+                              _isOnline
+                                  ? Icons.check_circle_outline
+                                  : Icons.wifi_off_outlined,
                               color: Colors.white,
                             ),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Text(
-                              'Online',
-                              style: TextStyle(
+                              _isOnline ? 'Online' : 'Offline',
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 18,
@@ -106,10 +165,10 @@ class HomeScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                        SizedBox(height: 6),
+                        const SizedBox(height: 6),
                         Text(
-                          '10 Data Pending',
-                          style: TextStyle(color: Color(0xFFEFFFF8)),
+                          '$_pendingCount Data Pending',
+                          style: const TextStyle(color: Color(0xFFEFFFF8)),
                         ),
                       ],
                     ),

@@ -27,11 +27,14 @@ class _RiwayatScreenState extends State<RiwayatScreen>
       final status = r['status_sinkron'] == 1 ? 'Sync' : 'Pending';
       return _RiwayatItem(
         name: r['nama']?.toString() ?? '-',
-        date: r['id_pelanggan']?.toString() ?? '-',
+        date: (r['no_meter'] ?? r['id_pelanggan'])?.toString() ?? '-',
         status: status,
         statusColor: status == 'Sync'
             ? const Color(0xFF10B981)
             : const Color(0xFFEEC000),
+        latitude: r['latitude'] as double?,
+        longitude: r['longitude'] as double?,
+        waktuKunjungan: r['waktu_kunjungan']?.toString(),
       );
     }).toList();
   }
@@ -174,6 +177,48 @@ class _RiwayatItemWidget extends StatelessWidget {
               ),
             ],
           ),
+          if (item.latitude != null && item.longitude != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(
+                  Icons.location_on,
+                  size: 14,
+                  color: Color(0xFF6B7280),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${item.latitude!.toStringAsFixed(6)}, ${item.longitude!.toStringAsFixed(6)}',
+                  style: const TextStyle(
+                    color: Color(0xFF6B7280),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (item.waktuKunjungan != null) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(
+                  Icons.access_time,
+                  size: 14,
+                  color: Color(0xFF6B7280),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  DateTime.parse(
+                    item.waktuKunjungan!,
+                  ).toLocal().toString().split('.')[0],
+                  style: const TextStyle(
+                    color: Color(0xFF6B7280),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -186,10 +231,16 @@ class _RiwayatItem {
     required this.date,
     required this.status,
     required this.statusColor,
+    this.latitude,
+    this.longitude,
+    this.waktuKunjungan,
   });
 
   final String name;
   final String date;
   final String status;
   final Color statusColor;
+  final double? latitude;
+  final double? longitude;
+  final String? waktuKunjungan;
 }

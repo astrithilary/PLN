@@ -4,6 +4,7 @@ import 'profile.dart';
 import 'sinkronisasi.dart';
 import 'signup_screen.dart';
 import 'input_data_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

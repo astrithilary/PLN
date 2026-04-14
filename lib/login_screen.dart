@@ -46,7 +46,8 @@ class _LoginScreenState extends State<LoginScreen> {
       final username = _usernameController.text;
       final password = _passwordController.text;
 
-      final response = await ApiService.login(username, password);
+      final response =
+          await ApiService.login(username, password) as Map<String, dynamic>?;
 
       if (!mounted) return;
 

@@ -136,4 +136,8 @@ class ApiService {
       return null;
     }
   }
+
+  static Future<Object?> login(String username, String password) async {
+    return null;
+  }
 }

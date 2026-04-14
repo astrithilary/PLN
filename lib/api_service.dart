@@ -8,7 +8,25 @@ class ApiService {
   // Endpoint disesuaikan dengan Route::post('/sync-pelanggan') di Laravel tadi
   static const String endpoint = '$baseUrl/sync-pelanggan';
 
+  static Map<String, dynamic> _normalizePelangganData(
+    Map<String, dynamic> data,
+  ) {
+    return {
+      'nama': data['nama'],
+      'alamat': data['alamat'],
+      'no_meter': data['no_meter'] ?? data['id_pelanggan'] ?? '',
+      'daya_listrik': data['daya_listrik'] ?? data['daya'],
+      'no_hp': data['no_hp'],
+      'foto_path': data['foto_path'],
+      'latitude': data['latitude'],
+      'longitude': data['longitude'],
+      'waktu_kunjungan': data['waktu_kunjungan'],
+    };
+  }
+
   static Future<bool> savePelanggan(Map<String, dynamic> data) async {
+    final payload = _normalizePelangganData(data);
+
     try {
       final response = await http
           .post(
@@ -17,18 +35,7 @@ class ApiService {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
             },
-            // Pastikan key sesuai dengan validasi Laravel
-            body: jsonEncode({
-              'nama': data['nama'],
-              'alamat': data['alamat'],
-              'no_meter':
-                  data['id_pelanggan'] ??
-                  data['no_meter'], // Support kedua format
-              'daya_listrik': data['daya_listrik'],
-              'no_hp': data['no_hp'],
-              'foto_path':
-                  data['foto_path'], // Untuk foto, kirim path atau base64
-            }),
+            body: jsonEncode(payload),
           )
           .timeout(const Duration(seconds: 10));
 
@@ -47,6 +54,7 @@ class ApiService {
 
     for (var data in dataList) {
       try {
+        final payload = _normalizePelangganData(data);
         final response = await http
             .post(
               Uri.parse(endpoint),
@@ -54,7 +62,7 @@ class ApiService {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
               },
-              body: jsonEncode(data),
+              body: jsonEncode(payload),
             )
             .timeout(const Duration(seconds: 10));
 

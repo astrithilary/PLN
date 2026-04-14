@@ -97,7 +97,7 @@ class MockDatabase {
 
 class DbHelper {
   static const _databaseName = 'pln_survey.db';
-  static const _databaseVersion = 1;
+  static const _databaseVersion = 2;
   static const tablePelanggan = 'pelanggan';
 
   DbHelper._privateConstructor();
@@ -128,6 +128,7 @@ class DbHelper {
       path,
       version: _databaseVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -141,9 +142,22 @@ class DbHelper {
         daya TEXT,
         no_hp TEXT,
         foto_path TEXT,
+        latitude REAL,
+        longitude REAL,
+        waktu_kunjungan TEXT,
         status_sinkron INTEGER
       )
     ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE $tablePelanggan ADD COLUMN latitude REAL');
+      await db.execute('ALTER TABLE $tablePelanggan ADD COLUMN longitude REAL');
+      await db.execute(
+        'ALTER TABLE $tablePelanggan ADD COLUMN waktu_kunjungan TEXT',
+      );
+    }
   }
 
   Future<int> insertPelanggan(Map<String, dynamic> row) async {

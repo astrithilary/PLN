@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
-import 'db_helper.dart';
 import 'riwayat.dart';
 import 'profile.dart';
 import 'sinkronisasi.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import 'login_screen.dart';
 import 'signup_screen.dart';
-import 'home_screen.dart';
-import 'task_list_screen.dart';
 import 'input_data_screen.dart';
 
 void main() {
@@ -450,129 +444,6 @@ class TaskListScreen extends StatelessWidget {
   }
 }
 
-class InputDataScreen extends StatelessWidget {
-  const InputDataScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Input Data Pelanggan',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const _FlatInput(hint: 'Nama Pelanggan'),
-            const SizedBox(height: 12),
-            const _FlatInput(hint: 'ID Pelanggan'),
-            const SizedBox(height: 12),
-            const _FlatInput(hint: 'Alamat'),
-            const SizedBox(height: 12),
-            const _FlatInput(hint: 'Daya Listrik'),
-            const SizedBox(height: 18),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Simulasi membuka kamera...')),
-                  );
-                },
-                icon: const Icon(Icons.camera_alt_outlined),
-                label: const Text('Ambil Foto'),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  backgroundColor: const Color(0xFF1368D6),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => Navigator.pop(context),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  side: const BorderSide(color: Color(0xFF1368D6), width: 1.2),
-                  foregroundColor: const Color(0xFF1368D6),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Selesai',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FormField extends StatelessWidget {
-  const _FormField({
-    required this.hint,
-    required this.icon,
-    this.obscure = false,
-  });
-
-  final String hint;
-  final IconData icon;
-  final bool obscure;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      obscureText: obscure,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFFD8E7FF)),
-        prefixIcon: Icon(icon, color: const Color(0xFFD8E7FF)),
-        filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.14),
-        contentPadding: const EdgeInsets.symmetric(vertical: 12),
-        border: OutlineInputBorder(
-          borderSide: BorderSide.none,
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-    );
-  }
-}
-
-class _FlatInput extends StatelessWidget {
-  const _FlatInput({required this.hint});
-
-  final String hint;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      decoration: InputDecoration(
-        hintText: hint,
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-      ),
-    );
-  }
-}
-
 class _MenuTile extends StatelessWidget {
   const _MenuTile({
     required this.title,
@@ -638,4 +509,35 @@ class _TaskItem {
   final String name;
   final String address;
   final bool isDone;
+}
+
+class _FormField extends StatelessWidget {
+  const _FormField({
+    required this.hint,
+    required this.icon,
+    this.obscure = false,
+  });
+
+  final String hint;
+  final IconData icon;
+  final bool obscure;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      obscureText: obscure,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: Color(0xFFD8E7FF)),
+        prefixIcon: Icon(icon, color: const Color(0xFFD8E7FF)),
+        filled: true,
+        fillColor: Colors.white.withValues(alpha: 0.14),
+        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+        border: OutlineInputBorder(
+          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
 }

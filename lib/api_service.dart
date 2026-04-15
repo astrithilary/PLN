@@ -1,11 +1,15 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 
 class ApiService {
   static final Logger _logger = Logger();
-  // GANTI '192.168.1.XX' dengan IP Laptop Anda yang muncul di ipconfig
-  static const String baseUrl = 'http://192.168.1.8:8000/api';
+  // Set via --dart-define=API_BASE_URL=http://IP_LAPTOP:8000/api
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://10.117.248.219:8000/api',
+  );
 
   // Endpoint disesuaikan dengan Route::post('/sync-pelanggan') di Laravel tadi
   static const String endpoint = '$baseUrl/sync-pelanggan';
@@ -39,9 +43,12 @@ class ApiService {
             },
             body: jsonEncode(payload),
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 15));
 
       return (response.statusCode == 200 || response.statusCode == 201);
+    } on TimeoutException {
+      _logger.e('Error API timeout ke $endpoint');
+      return false;
     } catch (e) {
       _logger.e('Error API: $e');
       return false;

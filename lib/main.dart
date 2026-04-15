@@ -3,6 +3,7 @@ import 'riwayat.dart';
 import 'profile.dart';
 import 'sinkronisasi.dart';
 import 'signup_screen.dart';
+import 'login_screen.dart';
 import 'input_data_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -54,108 +55,6 @@ class MainApp extends StatelessWidget {
         '/profile': (_) => const ProfileScreen(),
         '/sinkronisasi': (_) => const SinkronisasiScreen(),
       },
-    );
-  }
-}
-
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF0A2540), Color(0xFF1565D8), Color(0xFF18B8C9)],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Container(
-                width: 360,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: Colors.white24),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFDD00),
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x50FFE66D),
-                            blurRadius: 16,
-                            offset: Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.bolt,
-                        size: 38,
-                        color: Color(0xFF1458B0),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'PLN Survey App',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Masuk untuk mulai tugas lapangan',
-                      style: TextStyle(color: Color(0xFFE8F2FF)),
-                    ),
-                    const SizedBox(height: 24),
-                    _FormField(hint: 'Username', icon: Icons.person_outline),
-                    const SizedBox(height: 12),
-                    _FormField(
-                      hint: 'Password',
-                      icon: Icons.lock_outline,
-                      obscure: true,
-                    ),
-                    const SizedBox(height: 18),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFFFDD00),
-                          foregroundColor: const Color(0xFF0E2A4A),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        onPressed: () =>
-                            Navigator.pushReplacementNamed(context, '/home'),
-                        child: const Text(
-                          'Login',
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -515,35 +414,4 @@ class _TaskItem {
   final String name;
   final String address;
   final bool isDone;
-}
-
-class _FormField extends StatelessWidget {
-  const _FormField({
-    required this.hint,
-    required this.icon,
-    this.obscure = false,
-  });
-
-  final String hint;
-  final IconData icon;
-  final bool obscure;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      obscureText: obscure,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFFD8E7FF)),
-        prefixIcon: Icon(icon, color: const Color(0xFFD8E7FF)),
-        filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.14),
-        contentPadding: const EdgeInsets.symmetric(vertical: 12),
-        border: OutlineInputBorder(
-          borderSide: BorderSide.none,
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-    );
-  }
 }

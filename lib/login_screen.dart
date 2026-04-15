@@ -12,6 +12,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  static const bool _bypassLogin = true;
+
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -24,6 +26,20 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleLogin() async {
+    if (_bypassLogin) {
+      final prefs = await SharedPreferences.getInstance();
+      final username = _usernameController.text.trim();
+      await prefs.setString('auth_token', 'bypass-token');
+      await prefs.setString(
+        'username',
+        username.isNotEmpty ? username : 'Surveyor',
+      );
+
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/home');
+      return;
+    }
+
     if (_formKey.currentState!.validate()) {
       // Cek koneksi
       final connectivityResult = await Connectivity().checkConnectivity();
@@ -103,24 +119,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
+                      SizedBox(
                         width: 72,
                         height: 72,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFDD00),
+                        child: ClipRRect(
                           borderRadius: BorderRadius.circular(18),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x50FFE66D),
-                              blurRadius: 16,
-                              offset: Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.bolt,
-                          size: 38,
-                          color: Color(0xFF1458B0),
+                          child: Image.asset(
+                            'assets/plnLogo.png',
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -184,15 +191,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: () =>
-                            Navigator.pushNamed(context, '/signup'),
-                        child: const Text(
-                          'Belum punya akun? Daftar',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
+                      // const SizedBox(height: 16),
+                      // TextButton(
+                      //   onPressed: () =>
+                      //       Navigator.pushNamed(context, '/signup'),
+                      //   child: const Text(
+                      //     'Belum punya akun? Daftar',
+                      //     style: TextStyle(color: Colors.white),
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),

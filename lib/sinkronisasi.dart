@@ -81,19 +81,50 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
     });
 
     // Loop Sync ke API Laravel
-    await _syncToServer(pendingRows);
+    final result = await _syncToServer(pendingRows);
 
     if (!mounted) return;
     await _refreshCounts();
 
-    if (mounted) {
-      _showSuccessModal();
+    if (!mounted) return;
+
+    setState(() {
+      _isSyncing = false;
+    });
+
+    if (result.syncedCount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Sinkronisasi gagal. Cek URL API, server Laravel, dan koneksi jaringan.',
+          ),
+        ),
+      );
+      return;
     }
+
+    if (result.failedCount > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${result.syncedCount} data berhasil, ${result.failedCount} data gagal disinkronkan.',
+          ),
+        ),
+      );
+    }
+
+    _showSuccessModal(
+      syncedCount: result.syncedCount,
+      failedCount: result.failedCount,
+    );
   }
 
-  Future<void> _syncToServer(List<Map<String, dynamic>> pendingRows) async {
+  Future<_SyncResult> _syncToServer(
+    List<Map<String, dynamic>> pendingRows,
+  ) async {
     int totalItems = pendingRows.length;
     int processedItems = 0;
+    int syncedItems = 0;
 
     for (var row in pendingRows) {
       if (!_isSyncing) break;
@@ -116,11 +147,13 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
 
           // Update status_sinkron = 1 di lokal
           await DbHelper.instance.updatePelangganStatus(row['id'] as int, 1);
-          processedItems++;
+          syncedItems++;
         }
       } catch (e) {
         _logger.e('Error saat sync: $e');
       }
+
+      processedItems++;
 
       // Update progress
       if (mounted) {
@@ -132,13 +165,10 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
       await Future.delayed(const Duration(milliseconds: 300));
     }
 
-    // Selesai
-    if (mounted) {
-      setState(() {
-        _progress = 1.0;
-      });
-      await Future.delayed(const Duration(seconds: 1));
-    }
+    return _SyncResult(
+      syncedCount: syncedItems,
+      failedCount: processedItems - syncedItems,
+    );
   }
 
   void _cancelSync() {
@@ -148,7 +178,7 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
     });
   }
 
-  void _showSuccessModal() {
+  void _showSuccessModal({required int syncedCount, required int failedCount}) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -181,10 +211,12 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Semua data telah tersinkronisasi dengan server',
+              Text(
+                failedCount == 0
+                    ? 'Semua data telah tersinkronisasi dengan server'
+                    : '$syncedCount data berhasil, $failedCount data gagal disinkronkan',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -200,7 +232,6 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
                   onPressed: () {
                     Navigator.pop(context);
                     setState(() {
-                      _isSyncing = false;
                       _progress = 0.0;
                     });
                   },
@@ -369,6 +400,13 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
       ),
     );
   }
+}
+
+class _SyncResult {
+  const _SyncResult({required this.syncedCount, required this.failedCount});
+
+  final int syncedCount;
+  final int failedCount;
 }
 
 class _StatusCard extends StatelessWidget {

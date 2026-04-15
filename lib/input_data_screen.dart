@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'db_helper.dart';
 import 'package:geolocator/geolocator.dart';
+import 'input_preview_screen.dart';
 
 class InputDataScreen extends StatefulWidget {
   const InputDataScreen({super.key});
@@ -45,6 +45,16 @@ class _InputDataScreenState extends State<InputDataScreen> {
     });
 
     try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Layanan lokasi tidak aktif')),
+          );
+        }
+        return;
+      }
+
       // Cek permission
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -162,25 +172,24 @@ class _InputDataScreenState extends State<InputDataScreen> {
       'status_sinkron': 0,
     };
 
-    try {
-      await DbHelper.instance.insertPelanggan(row);
-      if (!mounted) return;
+    setState(() {
+      _isSaving = false;
+    });
+
+    if (!mounted) return;
+
+    final bool? saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => InputPreviewScreen(data: row)),
+    );
+
+    if (!mounted) return;
+
+    if (saved == true) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Data berhasil disimpan.')));
       Navigator.pop(context);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Gagal menyimpan data: $e')));
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-      }
     }
   }
 
@@ -195,208 +204,218 @@ class _InputDataScreenState extends State<InputDataScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Expanded(
-              child: Form(
-                key: _formKey,
-                child: ListView(
-                  children: [
-                    _buildTextField(
-                      controller: _namaController,
-                      label: 'Nama Pelanggan',
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Nama wajib diisi';
-                        }
-                        return null;
-                      },
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              _buildTextField(
+                controller: _namaController,
+                label: 'Nama Pelanggan',
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Nama wajib diisi';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildTextField(
+                controller: _idPelangganController,
+                label: 'ID Pelanggan / No Meter',
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'ID Pelanggan atau No Meter wajib diisi';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildTextField(
+                controller: _alamatController,
+                label: 'Alamat',
+                maxLines: 3,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Alamat wajib diisi';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildTextField(
+                controller: _dayaController,
+                label: 'Daya Listrik',
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 12),
+              _buildTextField(
+                controller: _noHpController,
+                label: 'No HP',
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 18),
+              // Tombol Ambil Lokasi
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _isGettingLocation ? null : _getCurrentLocation,
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    backgroundColor: const Color(0xFF1368D6),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      controller: _idPelangganController,
-                      label: 'ID Pelanggan / No Meter',
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'ID Pelanggan atau No Meter wajib diisi';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      controller: _alamatController,
-                      label: 'Alamat',
-                      maxLines: 3,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Alamat wajib diisi';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      controller: _dayaController,
-                      label: 'Daya Listrik',
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      controller: _noHpController,
-                      label: 'No HP',
-                      keyboardType: TextInputType.phone,
-                    ),
-                    const SizedBox(height: 18),
-                    // Tombol Ambil Lokasi
-                    FilledButton.icon(
-                      onPressed: _isGettingLocation
-                          ? null
-                          : _getCurrentLocation,
-                      icon: _isGettingLocation
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _isGettingLocation
                           ? const SizedBox(
-                              width: 20,
-                              height: 20,
+                              width: 18,
+                              height: 18,
                               child: CircularProgressIndicator(
                                 color: Colors.white,
                                 strokeWidth: 2,
                               ),
                             )
                           : const Icon(Icons.location_on),
-                      label: Text(
+                      const SizedBox(width: 8),
+                      Text(
                         _isGettingLocation
                             ? 'Mengambil Lokasi...'
                             : 'Ambil Lokasi',
                       ),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        backgroundColor: const Color(0xFF1368D6),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    // Tampilkan informasi lokasi
-                    if (_latitude != null && _longitude != null)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.green.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Lokasi berhasil didapat:',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Colors.green,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text('Latitude: $_latitude'),
-                            Text('Longitude: $_longitude'),
-                            if (_waktuKunjungan != null)
-                              Text(
-                                'Waktu: ${DateTime.parse(_waktuKunjungan!).toLocal().toString().split('.')[0]}',
-                              ),
-                          ],
-                        ),
-                      ),
-                    const SizedBox(height: 12),
-                    FilledButton.icon(
-                      onPressed: _pickPhoto,
-                      icon: const Icon(Icons.camera_alt_outlined),
-                      label: const Text('Ambil Foto'),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        backgroundColor: const Color(0xFF1368D6),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (_fotoPath != null && _fotoPath!.isNotEmpty)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Foto yang dipilih:',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 8),
-                          if (!kIsWeb && File(_fotoPath!).existsSync())
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.file(
-                                File(_fotoPath!),
-                                height: 180,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          else
-                            Text(_fotoPath!),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _isSaving ? null : _savePelanggan,
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    ],
                   ),
                 ),
-                child: _isSaving
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
+              ),
+              const SizedBox(height: 12),
+              // Tampilkan informasi lokasi
+              if (_latitude != null && _longitude != null)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.green.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Lokasi berhasil didapat:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.green,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text('Latitude: $_latitude'),
+                      Text('Longitude: $_longitude'),
+                      if (_waktuKunjungan != null)
+                        Text(
+                          'Waktu: ${DateTime.parse(_waktuKunjungan!).toLocal().toString().split('.')[0]}',
+                        ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _pickPhoto,
+                  icon: const Icon(Icons.camera_alt_outlined),
+                  label: const Text('Ambil Foto'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    backgroundColor: const Color(0xFF1368D6),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (_fotoPath != null && _fotoPath!.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Foto yang dipilih:',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    if (!kIsWeb && File(_fotoPath!).existsSync())
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.file(
+                          File(_fotoPath!),
+                          height: 180,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
                         ),
                       )
-                    : const Text(
-                        'Simpan Data',
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
+                    else
+                      Text(_fotoPath!),
+                  ],
+                ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _isSaving ? null : _savePelanggan,
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isSaving
+                      ? const SizedBox(
+                          key: ValueKey('loading'),
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Simpan Data',
+                          key: ValueKey('text'),
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: _isSaving ? null : () => Navigator.pop(context),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  side: const BorderSide(color: Color(0xFF1368D6), width: 1.2),
-                  foregroundColor: const Color(0xFF1368D6),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: _isSaving ? null : () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    side: const BorderSide(
+                      color: Color(0xFF1368D6),
+                      width: 1.2,
+                    ),
+                    foregroundColor: const Color(0xFF1368D6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Batal',
+                    style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
-                child: const Text(
-                  'Batal',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

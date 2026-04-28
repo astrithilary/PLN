@@ -131,14 +131,14 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
 
       try {
         // Kirim data ke API Laravel
-        final success = await ApiService.savePelanggan(row);
+        final serverId = await ApiService.savePelanggan(row);
 
-        if (success) {
+        if (serverId != null) {
           // Jika ada foto, upload juga
           if (row['foto_path'] != null && row['foto_path'].isNotEmpty) {
             final fotoUploaded = await ApiService.uploadFoto(
               row['foto_path'],
-              row['id'] as int,
+              serverId,
             );
             if (fotoUploaded != null) {
               _logger.i('Foto berhasil diupload: $fotoUploaded');

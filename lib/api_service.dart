@@ -8,7 +8,7 @@ class ApiService {
   // Set via --dart-define=API_BASE_URL=http://IP_LAPTOP:8000/api
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.117.248.219:8000/api',
+    defaultValue: 'http://10.0.2.2:8000/api',
   );
 
   // Endpoint disesuaikan dengan Route::post('/sync-pelanggan') di Laravel tadi
@@ -30,7 +30,7 @@ class ApiService {
     };
   }
 
-  static Future<bool> savePelanggan(Map<String, dynamic> data) async {
+  static Future<int?> savePelanggan(Map<String, dynamic> data) async {
     final payload = _normalizePelangganData(data);
 
     try {
@@ -45,13 +45,19 @@ class ApiService {
           )
           .timeout(const Duration(seconds: 15));
 
-      return (response.statusCode == 200 || response.statusCode == 201);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        return responseData['id'] as int?;
+      }
+
+      _logger.w('Sync failed: ${response.statusCode} ${response.body}');
+      return null;
     } on TimeoutException {
       _logger.e('Error API timeout ke $endpoint');
-      return false;
+      return null;
     } catch (e) {
       _logger.e('Error API: $e');
-      return false;
+      return null;
     }
   }
 
@@ -77,6 +83,8 @@ class ApiService {
 
         if (response.statusCode == 200 || response.statusCode == 201) {
           successfulIds.add(data['id'] as int);
+        } else {
+          _logger.w('Batch sync failed: ${response.statusCode} ${response.body}');
         }
       } catch (e) {
         _logger.e('Error saat send batch: $e');

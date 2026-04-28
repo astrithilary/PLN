@@ -84,7 +84,9 @@ class ApiService {
         if (response.statusCode == 200 || response.statusCode == 201) {
           successfulIds.add(data['id'] as int);
         } else {
-          _logger.w('Batch sync failed: ${response.statusCode} ${response.body}');
+          _logger.w(
+            'Batch sync failed: ${response.statusCode} ${response.body}',
+          );
         }
       } catch (e) {
         _logger.e('Error saat send batch: $e');

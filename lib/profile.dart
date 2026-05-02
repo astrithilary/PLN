@@ -22,20 +22,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _profile = _ProfileData(
-      name: 'Carl',
-      email: 'carl@pln.co.id',
-      phone: '+62 812 3456 7890',
-      address: 'Jl. Gatot Subroto No. 10, Jakarta',
-      department: 'Survey & Inspection',
-      status: 'Online',
-    );
+    _loadProfile();
+  }
 
-    _nameController = TextEditingController(text: _profile.name);
-    _emailController = TextEditingController(text: _profile.email);
-    _phoneController = TextEditingController(text: _profile.phone);
-    _addressController = TextEditingController(text: _profile.address);
-    _departmentController = TextEditingController(text: _profile.department);
+  Future<void> _loadProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final name = prefs.getString('profile_name') ?? 'Carl';
+    final email = prefs.getString('profile_email') ?? 'carl@pln.co.id';
+    final phone = prefs.getString('profile_phone') ?? '+62 812 3456 7890';
+    final address = prefs.getString('profile_address') ?? 'Jl. Gatot Subroto No. 10, Jakarta';
+    final department = prefs.getString('profile_department') ?? 'Survey & Inspection';
+    final status = prefs.getString('profile_status') ?? 'Online';
+
+    setState(() {
+      _profile = _ProfileData(
+        name: name,
+        email: email,
+        phone: phone,
+        address: address,
+        department: department,
+        status: status,
+      );
+
+      _nameController = TextEditingController(text: _profile.name);
+      _emailController = TextEditingController(text: _profile.email);
+      _phoneController = TextEditingController(text: _profile.phone);
+      _addressController = TextEditingController(text: _profile.address);
+      _departmentController = TextEditingController(text: _profile.department);
+    });
   }
 
   @override

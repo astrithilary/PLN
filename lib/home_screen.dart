@@ -1,7 +1,38 @@
 import 'package:flutter/material.dart';
+import 'db_helper.dart';
+import 'user_session.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String _userName = 'Admin';
+  int _pendingCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserAndPending();
+  }
+
+  Future<void> _loadUserAndPending() async {
+    final name = await UserSession.getUserName();
+    final list = await DbHelper.instance.getPelangganByStatus(0);
+    if (!mounted) return;
+    setState(() {
+      _userName = name ?? 'Admin';
+      _pendingCount = list.length;
+    });
+  }
+
+  Future<void> _navigateAndRefresh(String route) async {
+    await Navigator.pushNamed(context, route);
+    await _loadUserAndPending();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +55,9 @@ class HomeScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Hi, Carl',
-                          style: TextStyle(
+                        Text(
+                          'Hi, $_userName',
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
@@ -108,8 +139,8 @@ class HomeScreen extends StatelessWidget {
                         ),
                         SizedBox(height: 6),
                         Text(
-                          '10 Data Pending',
-                          style: TextStyle(color: Color(0xFFEFFFF8)),
+                          '$_pendingCount Data Pending',
+                          style: const TextStyle(color: Color(0xFFEFFFF8)),
                         ),
                       ],
                     ),
@@ -127,26 +158,25 @@ class HomeScreen extends StatelessWidget {
                           title: 'Daftar Tugas',
                           icon: Icons.assignment_outlined,
                           color: const Color(0xFF1368D6),
-                          onTap: () => Navigator.pushNamed(context, '/tasks'),
+                          onTap: () => _navigateAndRefresh('/tasks'),
                         ),
                         _MenuTile(
                           title: 'Input Pelanggan',
                           icon: Icons.edit_document,
                           color: const Color(0xFF0AA06E),
-                          onTap: () => Navigator.pushNamed(context, '/input'),
+                          onTap: () => _navigateAndRefresh('/input'),
                         ),
                         _MenuTile(
                           title: 'Riwayat',
                           icon: Icons.history,
                           color: const Color(0xFFF08A00),
-                          onTap: () => Navigator.pushNamed(context, '/riwayat'),
+                          onTap: () => _navigateAndRefresh('/riwayat'),
                         ),
                         _MenuTile(
                           title: 'Sinkronisasi',
                           icon: Icons.sync,
                           color: const Color(0xFF6756E8),
-                          onTap: () =>
-                              Navigator.pushNamed(context, '/sinkronisasi'),
+                          onTap: () => _navigateAndRefresh('/sinkronisasi'),
                         ),
                       ],
                     ),

@@ -64,6 +64,11 @@ class MockDatabase {
             _tables[table]![i].addAll(values);
             count++;
           }
+        } else if (where.contains('id = ?') && whereArgs.isNotEmpty) {
+          if (_tables[table]![i]['id'] == whereArgs[0]) {
+            _tables[table]![i].addAll(values);
+            count++;
+          }
         }
       }
     }
@@ -97,8 +102,9 @@ class MockDatabase {
 
 class DbHelper {
   static const _databaseName = 'pln_survey.db';
-  static const _databaseVersion = 2;
+  static const _databaseVersion = 3;
   static const tablePelanggan = 'pelanggan';
+  static const tableUser = 'user_profile';
 
   DbHelper._privateConstructor();
   static final DbHelper instance = DbHelper._privateConstructor();
@@ -148,6 +154,21 @@ class DbHelper {
         status_sinkron INTEGER
       )
     ''');
+
+    // Create user profile table
+    await db.execute('''
+      CREATE TABLE $tableUser (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        email TEXT,
+        phone TEXT,
+        address TEXT,
+        department TEXT,
+        status TEXT,
+        created_at TEXT,
+        updated_at TEXT
+      )
+    ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -157,6 +178,22 @@ class DbHelper {
       await db.execute(
         'ALTER TABLE $tablePelanggan ADD COLUMN waktu_kunjungan TEXT',
       );
+    }
+    if (oldVersion < 3) {
+      // Create user profile table if upgrading
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS $tableUser (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT,
+          email TEXT,
+          phone TEXT,
+          address TEXT,
+          department TEXT,
+          status TEXT,
+          created_at TEXT,
+          updated_at TEXT
+        )
+      ''');
     }
   }
 
@@ -276,6 +313,84 @@ class DbHelper {
     } else {
       final db = await database;
       return await db.delete(tablePelanggan, where: 'id = ?', whereArgs: [id]);
+    }
+  }
+
+  // ===== User Profile CRUD Methods =====
+
+  // Get user profile
+  Future<Map<String, dynamic>?> getUserProfile() async {
+    if (kIsWeb) {
+      _mockDatabase ??= MockDatabase();
+      final result = await _mockDatabase!.query(tableUser);
+      return result.isNotEmpty ? result.first : null;
+    } else {
+      final db = await database;
+      final result = await db.query(tableUser, limit: 1);
+      return result.isNotEmpty ? result.first : null;
+    }
+  }
+
+  // Insert or update user profile
+  Future<int> saveUserProfile(Map<String, dynamic> profileData) async {
+    final now = DateTime.now().toIso8601String();
+    
+    if (kIsWeb) {
+      _mockDatabase ??= MockDatabase();
+      final existing = await _mockDatabase!.query(tableUser);
+      
+      if (existing.isNotEmpty) {
+        // Update existing profile
+        profileData['updated_at'] = now;
+        for (var item in existing) {
+          item.addAll(profileData);
+        }
+        return existing.first['id'] as int;
+      } else {
+        // Insert new profile
+        profileData['created_at'] = now;
+        profileData['updated_at'] = now;
+        return await _mockDatabase!.insert(tableUser, profileData);
+      }
+    } else {
+      final db = await database;
+      final existing = await db.query(tableUser, limit: 1);
+      
+      profileData['updated_at'] = now;
+      
+      if (existing.isNotEmpty) {
+        // Update existing profile
+        await db.update(
+          tableUser,
+          profileData,
+          where: 'id = ?',
+          whereArgs: [existing.first['id']],
+        );
+        return existing.first['id'] as int;
+      } else {
+        // Insert new profile
+        profileData['created_at'] = now;
+        return await db.insert(tableUser, profileData);
+      }
+    }
+  }
+
+  // Delete user profile
+  Future<int> deleteUserProfile() async {
+    if (kIsWeb) {
+      _mockDatabase ??= MockDatabase();
+      final existing = await _mockDatabase!.query(tableUser);
+      if (existing.isNotEmpty) {
+        return await _mockDatabase!.delete(
+          tableUser,
+          where: 'id = ?',
+          whereArgs: [existing.first['id']],
+        );
+      }
+      return 0;
+    } else {
+      final db = await database;
+      return await db.delete(tableUser);
     }
   }
 }

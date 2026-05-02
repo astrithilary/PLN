@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'db_helper.dart';
+import 'user_session.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -11,6 +13,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Mock data - ganti dengan API/database nanti
   late _ProfileData _profile;
   bool _isEditing = false;
+  bool _isLoading = true;
 
   late TextEditingController _nameController;
   late TextEditingController _emailController;
@@ -21,20 +24,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _profile = _ProfileData(
-      name: 'Carl',
-      email: 'carl@pln.co.id',
-      phone: '+62 812 3456 7890',
-      address: 'Jl. Gatot Subroto No. 10, Jakarta',
-      department: 'Survey & Inspection',
-      status: 'Online',
-    );
+    _loadProfile();
+  }
 
-    _nameController = TextEditingController(text: _profile.name);
-    _emailController = TextEditingController(text: _profile.email);
-    _phoneController = TextEditingController(text: _profile.phone);
-    _addressController = TextEditingController(text: _profile.address);
-    _departmentController = TextEditingController(text: _profile.department);
+  void _loadProfile() async {
+    try {
+      // Cek apakah ada user yang login
+      final loggedInUserName = await UserSession.getUserName();
+      final loggedInUserEmail = await UserSession.getUserEmail();
+
+      final profileData = await DbHelper.instance.getUserProfile();
+      
+      if (profileData != null) {
+        _profile = _ProfileData(
+          name: profileData['name'] ?? loggedInUserName ?? '',
+          email: profileData['email'] ?? loggedInUserEmail ?? '',
+          phone: profileData['phone'] ?? '',
+          address: profileData['address'] ?? '',
+          department: profileData['department'] ?? '',
+          status: profileData['status'] ?? 'Online',
+        );
+      } else {
+        // Default data jika belum ada profil di database
+        // Gunakan nama dari user yang login
+        _profile = _ProfileData(
+          name: loggedInUserName ?? 'Admin',
+          email: loggedInUserEmail ?? 'admin@pln.com',
+          phone: '+62 812 3456 7890',
+          address: 'Jl. Gatot Subroto No. 10, Jakarta',
+          department: 'Survey & Inspection',
+          status: 'Online',
+        );
+        // Simpan default data ke database
+        await DbHelper.instance.saveUserProfile({
+          'name': _profile.name,
+          'email': _profile.email,
+          'phone': _profile.phone,
+          'address': _profile.address,
+          'department': _profile.department,
+          'status': _profile.status,
+        });
+      }
+
+      _nameController = TextEditingController(text: _profile.name);
+      _emailController = TextEditingController(text: _profile.email);
+      _phoneController = TextEditingController(text: _profile.phone);
+      _addressController = TextEditingController(text: _profile.address);
+      _departmentController = TextEditingController(text: _profile.department);
+
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading profile: $e');
+      setState(() {
+        _isLoading = false;
+      });
+      
+      // Fallback ke default data jika ada error
+      final loggedInUserName = await UserSession.getUserName();
+      final loggedInUserEmail = await UserSession.getUserEmail();
+
+      _profile = _ProfileData(
+        name: loggedInUserName ?? 'Admin',
+        email: loggedInUserEmail ?? 'admin@pln.com',
+        phone: '+62 812 3456 7890',
+        address: 'Jl. Gatot Subroto No. 10, Jakarta',
+        department: 'Survey & Inspection',
+        status: 'Online',
+      );
+
+      _nameController = TextEditingController(text: _profile.name);
+      _emailController = TextEditingController(text: _profile.email);
+      _phoneController = TextEditingController(text: _profile.phone);
+      _addressController = TextEditingController(text: _profile.address);
+      _departmentController = TextEditingController(text: _profile.department);
+    }
   }
 
   @override
@@ -56,53 +121,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  void _saveProfile() {
-    _profile = _ProfileData(
-      name: _nameController.text,
-      email: _emailController.text,
-      phone: _phoneController.text,
-      address: _addressController.text,
-      department: _departmentController.text,
-      status: _profile.status,
-    );
+  void _saveProfile() async {
+    try {
+      final updatedProfile = _ProfileData(
+        name: _nameController.text,
+        email: _emailController.text,
+        phone: _phoneController.text,
+        address: _addressController.text,
+        department: _departmentController.text,
+        status: _profile.status,
+      );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Profil berhasil diperbarui'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
+      // Simpan ke database
+      await DbHelper.instance.saveUserProfile({
+        'name': updatedProfile.name,
+        'email': updatedProfile.email,
+        'phone': updatedProfile.phone,
+        'address': updatedProfile.address,
+        'department': updatedProfile.department,
+        'status': updatedProfile.status,
+      });
 
-  void _deleteProfile() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Hapus Profil'),
-        content: const Text(
-          'Apakah Anda yakin ingin menghapus profil? Tindakan ini tidak dapat dibatalkan.',
+      // Update state dengan data yang baru disimpan
+      _profile = updatedProfile;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profil berhasil diperbarui'),
+          duration: Duration(seconds: 2),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Profil berhasil dihapus')),
-              );
-            },
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
-    );
+      );
+    } catch (e) {
+      print('Error saving profile: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal menyimpan profil'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   void _logout() {
@@ -150,23 +207,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          IconButton(
-            icon: Icon(_isEditing ? Icons.close : Icons.edit),
-            onPressed: () {
-              if (_isEditing) {
-                // Reset
-                _nameController.text = _profile.name;
-                _emailController.text = _profile.email;
-                _phoneController.text = _profile.phone;
-                _addressController.text = _profile.address;
-                _departmentController.text = _profile.department;
-              }
-              _toggleEdit();
-            },
-          ),
+          if (!_isLoading)
+            IconButton(
+              icon: Icon(_isEditing ? Icons.close : Icons.edit),
+              onPressed: () {
+                if (_isEditing) {
+                  // Reset
+                  _nameController.text = _profile.name;
+                  _emailController.text = _profile.email;
+                  _phoneController.text = _profile.phone;
+                  _addressController.text = _profile.address;
+                  _departmentController.text = _profile.department;
+                }
+                _toggleEdit();
+              },
+            ),
         ],
       ),
-      body: _isEditing ? _buildEditForm() : _buildProfileView(),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : (_isEditing ? _buildEditForm() : _buildProfileView()),
     );
   }
 
@@ -273,26 +335,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
 
-          // Delete Button
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _deleteProfile,
-                icon: const Icon(Icons.delete_outline),
-                label: const Text('Hapus Profil'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFFEF4444),
-                  side: const BorderSide(color: Color(0xFFEF4444)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-          ),
+          // (Delete profile removed)
 
           // Logout Button
           Padding(

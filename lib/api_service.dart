@@ -7,6 +7,50 @@ class ApiService {
 
   // Endpoint disesuaikan dengan Route::post('/sync-pelanggan') di Laravel tadi
   static const String endpoint = '$baseUrl/sync-pelanggan';
+  static const String loginEndpoint = '$baseUrl/login';
+
+  // Login endpoint
+  static Future<Map<String, dynamic>> login(
+    String email,
+    String password,
+  ) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse(loginEndpoint),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({
+              'email': email,
+              'password': password,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final jsonResponse = jsonDecode(response.body);
+        return {
+          'success': true,
+          'message': jsonResponse['message'] ?? 'Login berhasil',
+          'data': jsonResponse['data'],
+        };
+      } else {
+        final jsonResponse = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': jsonResponse['message'] ?? 'Email atau password salah',
+        };
+      }
+    } catch (e) {
+      print('Error Login: $e');
+      return {
+        'success': false,
+        'message': 'Gagal terhubung ke server. Periksa koneksi internet Anda.',
+      };
+    }
+  }
 
   static Map<String, dynamic> _normalizePelangganData(
     Map<String, dynamic> data,

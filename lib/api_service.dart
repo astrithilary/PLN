@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
+import 'auth_storage.dart';
 
 class ApiService {
   static final Logger _logger = Logger();
@@ -13,6 +14,24 @@ class ApiService {
 
   // Endpoint disesuaikan dengan Route::post('/sync-pelanggan') di Laravel tadi
   static const String endpoint = '$baseUrl/sync-pelanggan';
+
+  static Future<Map<String, String>> _jsonHeaders({
+    bool authenticated = true,
+  }) async {
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    if (authenticated) {
+      final token = await AuthStorage.getToken();
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+    }
+
+    return headers;
+  }
 
   static Map<String, dynamic> _normalizePelangganData(
     Map<String, dynamic> data,
@@ -37,10 +56,7 @@ class ApiService {
       final response = await http
           .post(
             Uri.parse(endpoint),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
+            headers: await _jsonHeaders(),
             body: jsonEncode(payload),
           )
           .timeout(const Duration(seconds: 15));
@@ -73,10 +89,7 @@ class ApiService {
         final response = await http
             .post(
               Uri.parse(endpoint),
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-              },
+              headers: await _jsonHeaders(),
               body: jsonEncode(payload),
             )
             .timeout(const Duration(seconds: 10));
@@ -104,6 +117,11 @@ class ApiService {
         Uri.parse('$baseUrl/upload-foto/$pelangganId'),
       );
 
+      final token = await AuthStorage.getToken();
+      if (token != null && token.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
       request.files.add(await http.MultipartFile.fromPath('foto', filePath));
 
       var response = await request.send();
@@ -127,10 +145,7 @@ class ApiService {
       final response = await http
           .get(
             Uri.parse('$baseUrl/tugas'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
+            headers: await _jsonHeaders(),
           )
           .timeout(const Duration(seconds: 10));
 
@@ -154,7 +169,43 @@ class ApiService {
     }
   }
 
-  static Future<Object?> login(String username, String password) async {
-    return null;
+  static Future<Map<String, dynamic>?> login(
+    String username,
+    String password,
+  ) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/login'),
+            headers: await _jsonHeaders(authenticated: false),
+            body: jsonEncode({'username': username, 'password': password}),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+
+      _logger.w('Login failed: ${response.statusCode} ${response.body}');
+      return null;
+    } on TimeoutException {
+      _logger.e('Login timeout ke $baseUrl/login');
+      return null;
+    } catch (e) {
+      _logger.e('Error login API: $e');
+      return null;
+    }
+  }
+
+  static Future<void> logout() async {
+    try {
+      await http
+          .post(Uri.parse('$baseUrl/logout'), headers: await _jsonHeaders())
+          .timeout(const Duration(seconds: 10));
+    } catch (e) {
+      _logger.w('Logout API failed: $e');
+    } finally {
+      await AuthStorage.clearSession();
+    }
   }
 }

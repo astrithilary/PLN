@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'auth_storage.dart';
 import 'db_helper.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -43,11 +43,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadData() async {
-    final prefs = await SharedPreferences.getInstance();
+    final username = await AuthStorage.getUsername();
     final pendingRows = await DbHelper.instance.getPelangganByStatus(0);
 
     setState(() {
-      _username = prefs.getString('username') ?? 'User';
+      _username = username ?? 'User';
       _pendingCount = pendingRows.length;
     });
   }

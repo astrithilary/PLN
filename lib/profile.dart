@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'api_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -122,9 +122,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               backgroundColor: const Color(0xFFF08A00),
             ),
             onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.remove('auth_token');
-              await prefs.remove('username');
+              await ApiService.logout();
 
               if (!dialogContext.mounted) return;
               Navigator.pop(dialogContext);

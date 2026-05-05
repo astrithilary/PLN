@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'api_service.dart';
+import 'auth_storage.dart';
 import 'custom_form_field.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,8 +12,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  static const bool _bypassLogin = true;
-
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -26,22 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleLogin() async {
-    if (_bypassLogin) {
-      final prefs = await SharedPreferences.getInstance();
-      final username = _usernameController.text.trim();
-      await prefs.setString('auth_token', 'bypass-token');
-      await prefs.setString(
-        'username',
-        username.isNotEmpty ? username : 'Surveyor',
-      );
-
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/home');
-      return;
-    }
-
     if (_formKey.currentState!.validate()) {
-      // Cek koneksi
       final connectivityResult = await Connectivity().checkConnectivity();
       final bool isOnline =
           connectivityResult.contains(ConnectivityResult.mobile) ||
@@ -58,28 +41,25 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      // [Online] Kirim kredensial
-      final username = _usernameController.text;
+      final username = _usernameController.text.trim();
       final password = _passwordController.text;
 
-      final response =
-          await ApiService.login(username, password) as Map<String, dynamic>?;
+      final response = await ApiService.login(username, password);
 
       if (!mounted) return;
 
       if (response != null &&
           (response['token'] != null || response['access_token'] != null)) {
-        // Simpan token
-        final token = response['token'] ?? response['access_token'];
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', token);
+        final token = (response['token'] ?? response['access_token'])
+            .toString();
+        final user = response['user'];
+        final displayName = user is Map && user['name'] != null
+            ? user['name'].toString()
+            : username;
 
-        // Asumsi data user ada di response, simpan username atau data lain yang diperlukan
-        // final userData = response['user'];
-        await prefs.setString('username', username);
+        await AuthStorage.saveSession(token: token, username: displayName);
 
         if (!mounted) return;
-        // Ke Dashboard
         Navigator.pushReplacementNamed(context, '/home');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -146,12 +126,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 24),
                       CustomFormField(
-                        hint: 'Username',
+                        hint: 'Email',
                         icon: Icons.person_outline,
                         controller: _usernameController,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Username tidak boleh kosong';
+                            return 'Email tidak boleh kosong';
                           }
                           return null;
                         },
@@ -191,15 +171,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                      // const SizedBox(height: 16),
-                      // TextButton(
-                      //   onPressed: () =>
-                      //       Navigator.pushNamed(context, '/signup'),
-                      //   child: const Text(
-                      //     'Belum punya akun? Daftar',
-                      //     style: TextStyle(color: Colors.white),
-                      //   ),
-                      // ),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/signup'),
+                        child: const Text(
+                          'Belum punya akun? Daftar',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
                     ],
                   ),
                 ),

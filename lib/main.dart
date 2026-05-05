@@ -5,12 +5,11 @@ import 'sinkronisasi.dart';
 import 'signup_screen.dart';
 import 'login_screen.dart';
 import 'input_data_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'auth_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('auth_token');
+  final token = await AuthStorage.getToken();
   final initialRoute = token != null ? '/home' : '/';
   runApp(MainApp(initialRoute: initialRoute));
 }

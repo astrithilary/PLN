@@ -11,9 +11,23 @@ class ApiService {
     'API_BASE_URL',
     defaultValue: 'http://192.168.18.46:8000/api',
   );
+  static const bool allowInsecureTransport = bool.fromEnvironment(
+    'API_ALLOW_INSECURE_TRANSPORT',
+    defaultValue: false,
+  );
 
   // Endpoint disesuaikan dengan Route::post('/sync-pelanggan') di Laravel tadi
   static const String endpoint = '$baseUrl/sync-pelanggan';
+
+  static bool get _canSendSensitiveData {
+    final uri = Uri.tryParse(baseUrl);
+    if (uri == null) return false;
+    if (uri.scheme == 'https') return true;
+    if (allowInsecureTransport) return true;
+
+    final host = uri.host.toLowerCase();
+    return host == 'localhost' || host == '127.0.0.1' || host == '::1';
+  }
 
   static Future<Map<String, String>> _jsonHeaders({
     bool authenticated = true,
@@ -25,7 +39,7 @@ class ApiService {
 
     if (authenticated) {
       final token = await AuthStorage.getToken();
-      if (token != null && token.isNotEmpty) {
+      if (token != null && token.isNotEmpty && _canSendSensitiveData) {
         headers['Authorization'] = 'Bearer $token';
       }
     }
@@ -118,7 +132,7 @@ class ApiService {
       );
 
       final token = await AuthStorage.getToken();
-      if (token != null && token.isNotEmpty) {
+      if (token != null && token.isNotEmpty && _canSendSensitiveData) {
         request.headers['Authorization'] = 'Bearer $token';
       }
 
@@ -167,15 +181,22 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>?> login(
-    String username,
+    String email,
     String password,
   ) async {
+    if (!_canSendSensitiveData) {
+      _logger.e(
+        'Refusing to send login credentials over insecure API_BASE_URL: $baseUrl',
+      );
+      return null;
+    }
+
     try {
       final response = await http
           .post(
             Uri.parse('$baseUrl/login'),
             headers: await _jsonHeaders(authenticated: false),
-            body: jsonEncode({'username': username, 'password': password}),
+            body: jsonEncode({'email': email, 'password': password}),
           )
           .timeout(const Duration(seconds: 15));
 

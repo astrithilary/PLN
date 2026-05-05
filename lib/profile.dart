@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'api_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'auth_storage.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -23,20 +23,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _profile = _ProfileData(
+      name: 'Carl',
+      email: 'carl@pln.co.id',
+      phone: '+62 812 3456 7890',
+      address: 'Jl. Gatot Subroto No. 10, Jakarta',
+      department: 'Survey & Inspection',
+      status: 'Online',
+    );
+    _nameController = TextEditingController(text: _profile.name);
+    _emailController = TextEditingController(text: _profile.email);
+    _phoneController = TextEditingController(text: _profile.phone);
+    _addressController = TextEditingController(text: _profile.address);
+    _departmentController = TextEditingController(text: _profile.department);
     _loadProfile();
   }
 
   Future<void> _loadProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    final name = prefs.getString('profile_name') ?? 'Carl';
-    final email = prefs.getString('profile_email') ?? 'carl@pln.co.id';
-    final phone = prefs.getString('profile_phone') ?? '+62 812 3456 7890';
+    final name = await AuthStorage.read('profile_name') ?? 'Carl';
+    final email = await AuthStorage.read('profile_email') ?? 'carl@pln.co.id';
+    final phone =
+        await AuthStorage.read('profile_phone') ?? '+62 812 3456 7890';
     final address =
-        prefs.getString('profile_address') ??
+        await AuthStorage.read('profile_address') ??
         'Jl. Gatot Subroto No. 10, Jakarta';
     final department =
-        prefs.getString('profile_department') ?? 'Survey & Inspection';
-    final status = prefs.getString('profile_status') ?? 'Online';
+        await AuthStorage.read('profile_department') ?? 'Survey & Inspection';
+    final status = await AuthStorage.read('profile_status') ?? 'Online';
+
+    if (!mounted) return;
 
     setState(() {
       _profile = _ProfileData(
@@ -48,11 +63,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         status: status,
       );
 
-      _nameController = TextEditingController(text: _profile.name);
-      _emailController = TextEditingController(text: _profile.email);
-      _phoneController = TextEditingController(text: _profile.phone);
-      _addressController = TextEditingController(text: _profile.address);
-      _departmentController = TextEditingController(text: _profile.department);
+      _nameController.text = _profile.name;
+      _emailController.text = _profile.email;
+      _phoneController.text = _profile.phone;
+      _addressController.text = _profile.address;
+      _departmentController.text = _profile.department;
     });
   }
 
@@ -66,16 +81,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
-  void _toggleEdit() {
+  void _toggleEdit() async {
     if (_isEditing) {
-      _saveProfile();
+      await _saveProfile();
     }
     setState(() {
       _isEditing = !_isEditing;
     });
   }
 
-  void _saveProfile() {
+  Future<void> _saveProfile() async {
     _profile = _ProfileData(
       name: _nameController.text,
       email: _emailController.text,
@@ -84,6 +99,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       department: _departmentController.text,
       status: _profile.status,
     );
+
+    await AuthStorage.write('profile_name', _profile.name);
+    await AuthStorage.write('profile_email', _profile.email);
+    await AuthStorage.write('profile_phone', _profile.phone);
+    await AuthStorage.write('profile_address', _profile.address);
+    await AuthStorage.write('profile_department', _profile.department);
+    await AuthStorage.write('profile_status', _profile.status);
+
+    if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(

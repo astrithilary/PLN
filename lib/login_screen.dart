@@ -41,10 +41,10 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      final username = _usernameController.text.trim();
+      final email = _usernameController.text.trim();
       final password = _passwordController.text;
 
-      final response = await ApiService.login(username, password);
+      final response = await ApiService.login(email, password);
 
       if (!mounted) return;
 
@@ -55,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
         final user = response['user'];
         final displayName = user is Map && user['name'] != null
             ? user['name'].toString()
-            : username;
+            : email;
 
         await AuthStorage.saveSession(token: token, username: displayName);
 

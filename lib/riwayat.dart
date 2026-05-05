@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'db_helper.dart';
 
@@ -35,6 +37,7 @@ class _RiwayatScreenState extends State<RiwayatScreen>
         latitude: r['latitude'] as double?,
         longitude: r['longitude'] as double?,
         waktuKunjungan: r['waktu_kunjungan']?.toString(),
+        fotoPath: r['foto_path']?.toString(),
       );
     }).toList();
   }
@@ -126,7 +129,6 @@ class _RiwayatItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -141,84 +143,171 @@ class _RiwayatItemWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            item.name,
-            style: const TextStyle(
-              color: Color(0xFF1368D6),
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Text(
-                item.date,
-                style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+          // Foto Section
+          if (item.fotoPath != null && item.fotoPath!.isNotEmpty) ...
+            [
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+                child: Container(
+                  width: double.infinity,
+                  height: 200,
+                  color: const Color(0xFFF3F4F6),
+                  child: Image.file(
+                    File(item.fotoPath!),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.image_not_supported,
+                              size: 48,
+                              color: Color(0xFFD1D5DB),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Foto tidak tersedia',
+                              style: TextStyle(
+                                color: Color(0xFF9CA3AF),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 5,
+            ]
+          else
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+              child: Container(
+                width: double.infinity,
+                height: 150,
+                color: const Color(0xFFF3F4F6),
+                child: const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.image,
+                        size: 40,
+                        color: Color(0xFFD1D5DB),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Tidak ada foto',
+                        style: TextStyle(
+                          color: Color(0xFF9CA3AF),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                decoration: BoxDecoration(
-                  color: item.statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  item.status,
-                  style: TextStyle(
-                    color: item.statusColor,
+              ),
+            ),
+          // Info Section
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  style: const TextStyle(
+                    color: Color(0xFF1368D6),
                     fontWeight: FontWeight.w700,
-                    fontSize: 12,
+                    fontSize: 14,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Text(
+                      item.date,
+                      style: const TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 13,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: item.statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        item.status,
+                        style: TextStyle(
+                          color: item.statusColor,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (item.latitude != null && item.longitude != null) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        size: 14,
+                        color: Color(0xFF6B7280),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          '${item.latitude!.toStringAsFixed(6)}, ${item.longitude!.toStringAsFixed(6)}',
+                          style: const TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                if (item.waktuKunjungan != null) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.access_time,
+                        size: 14,
+                        color: Color(0xFF6B7280),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        DateTime.parse(
+                          item.waktuKunjungan!,
+                        ).toLocal().toString().split('.')[0],
+                        style: const TextStyle(
+                          color: Color(0xFF6B7280),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
           ),
-          if (item.latitude != null && item.longitude != null) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(
-                  Icons.location_on,
-                  size: 14,
-                  color: Color(0xFF6B7280),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '${item.latitude!.toStringAsFixed(6)}, ${item.longitude!.toStringAsFixed(6)}',
-                  style: const TextStyle(
-                    color: Color(0xFF6B7280),
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ],
-          if (item.waktuKunjungan != null) ...[
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(
-                  Icons.access_time,
-                  size: 14,
-                  color: Color(0xFF6B7280),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  DateTime.parse(
-                    item.waktuKunjungan!,
-                  ).toLocal().toString().split('.')[0],
-                  style: const TextStyle(
-                    color: Color(0xFF6B7280),
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ],
         ],
       ),
     );
@@ -234,6 +323,7 @@ class _RiwayatItem {
     this.latitude,
     this.longitude,
     this.waktuKunjungan,
+    this.fotoPath,
   });
 
   final String name;
@@ -243,4 +333,5 @@ class _RiwayatItem {
   final double? latitude;
   final double? longitude;
   final String? waktuKunjungan;
+  final String? fotoPath;
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -30,8 +31,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final name = prefs.getString('profile_name') ?? 'Carl';
     final email = prefs.getString('profile_email') ?? 'carl@pln.co.id';
     final phone = prefs.getString('profile_phone') ?? '+62 812 3456 7890';
-    final address = prefs.getString('profile_address') ?? 'Jl. Gatot Subroto No. 10, Jakarta';
-    final department = prefs.getString('profile_department') ?? 'Survey & Inspection';
+    final address =
+        prefs.getString('profile_address') ??
+        'Jl. Gatot Subroto No. 10, Jakarta';
+    final department =
+        prefs.getString('profile_department') ?? 'Survey & Inspection';
     final status = prefs.getString('profile_status') ?? 'Online';
 
     setState(() {

@@ -143,10 +143,7 @@ class ApiService {
   static Future<List<Map<String, dynamic>>?> fetchTugas() async {
     try {
       final response = await http
-          .get(
-            Uri.parse('$baseUrl/tugas'),
-            headers: await _jsonHeaders(),
-          )
+          .get(Uri.parse('$baseUrl/tugas'), headers: await _jsonHeaders())
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {

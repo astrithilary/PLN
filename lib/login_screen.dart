@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'api_service.dart';
 import 'auth_storage.dart';
 import 'custom_form_field.dart';
@@ -24,50 +23,34 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleLogin() async {
-    if (_formKey.currentState!.validate()) {
-      final connectivityResult = await Connectivity().checkConnectivity();
-      final bool isOnline =
-          connectivityResult.contains(ConnectivityResult.mobile) ||
-          connectivityResult.contains(ConnectivityResult.wifi) ||
-          connectivityResult.contains(ConnectivityResult.ethernet);
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Input tidak valid')));
+      return;
+    }
+
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text;
+
+    final response = await ApiService.login(username, password);
+
+    if (!mounted) return;
+
+    if (response != null) {
+      final user = response['user'];
+      final displayName = user is Map && user['name'] != null
+          ? user['name'].toString()
+          : username;
+
+      await AuthStorage.saveSession(username: displayName);
 
       if (!mounted) return;
-
-      if (!isOnline) {
-        // [Offline] Error intranet
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Error intranet')));
-        return;
-      }
-
-      final email = _usernameController.text.trim();
-      final password = _passwordController.text;
-
-      final response = await ApiService.login(email, password);
-
-      if (!mounted) return;
-
-      if (response != null &&
-          (response['token'] != null || response['access_token'] != null)) {
-        final token = (response['token'] ?? response['access_token'])
-            .toString();
-        final user = response['user'];
-        final displayName = user is Map && user['name'] != null
-            ? user['name'].toString()
-            : email;
-
-        await AuthStorage.saveSession(token: token, username: displayName);
-
-        if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login gagal. Periksa kembali kredensial Anda.'),
-          ),
-        );
-      }
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Username atau password salah')),
+      );
     }
   }
 
@@ -126,12 +109,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 24),
                       CustomFormField(
-                        hint: 'Email',
+                        hint: 'Username',
                         icon: Icons.person_outline,
                         controller: _usernameController,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Email tidak boleh kosong';
+                            return 'Username tidak boleh kosong';
                           }
                           return null;
                         },

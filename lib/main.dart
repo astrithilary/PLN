@@ -5,18 +5,14 @@ import 'sinkronisasi.dart';
 import 'signup_screen.dart';
 import 'login_screen.dart';
 import 'input_data_screen.dart';
-import 'auth_storage.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  final token = await AuthStorage.getToken();
-  final initialRoute = token != null ? '/home' : '/';
-  runApp(MainApp(initialRoute: initialRoute));
+  runApp(const MainApp());
 }
 
 class MainApp extends StatelessWidget {
-  final String initialRoute;
-  const MainApp({super.key, required this.initialRoute});
+  const MainApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +39,7 @@ class MainApp extends StatelessWidget {
           bodyMedium: TextStyle(color: Color(0xFF4D6180)),
         ),
       ),
-      initialRoute: initialRoute,
+      initialRoute: '/',
       routes: {
         '/': (_) => const LoginScreen(),
         '/signup': (_) => const SignupScreen(),

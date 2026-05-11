@@ -29,7 +29,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       phone: '+62 812 3456 7890',
       address: 'Jl. Gatot Subroto No. 10, Jakarta',
       department: 'Survey & Inspection',
-      status: 'Online',
     );
     _nameController = TextEditingController(text: _profile.name);
     _emailController = TextEditingController(text: _profile.email);
@@ -49,7 +48,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'Jl. Gatot Subroto No. 10, Jakarta';
     final department =
         await AuthStorage.read('profile_department') ?? 'Survey & Inspection';
-    final status = await AuthStorage.read('profile_status') ?? 'Online';
 
     if (!mounted) return;
 
@@ -60,7 +58,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         phone: phone,
         address: address,
         department: department,
-        status: status,
       );
 
       _nameController.text = _profile.name;
@@ -97,7 +94,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       phone: _phoneController.text,
       address: _addressController.text,
       department: _departmentController.text,
-      status: _profile.status,
     );
 
     await AuthStorage.write('profile_name', _profile.name);
@@ -105,7 +101,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await AuthStorage.write('profile_phone', _profile.phone);
     await AuthStorage.write('profile_address', _profile.address);
     await AuthStorage.write('profile_department', _profile.department);
-    await AuthStorage.write('profile_status', _profile.status);
 
     if (!mounted) return;
 
@@ -254,35 +249,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: Colors.white,
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.circle,
-                        size: 8,
-                        color: Color(0xFF10B981),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _profile.status,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
                   ),
                 ),
               ],
@@ -596,7 +562,6 @@ class _ProfileData {
   String phone;
   String address;
   String department;
-  String status;
 
   _ProfileData({
     required this.name,
@@ -604,6 +569,5 @@ class _ProfileData {
     required this.phone,
     required this.address,
     required this.department,
-    required this.status,
   });
 }

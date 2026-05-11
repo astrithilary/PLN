@@ -47,15 +47,13 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
   }
 
   void _startSyncProcess() async {
-    // 1. Cek Koneksi
     final connectivityResult = await Connectivity().checkConnectivity();
-    final bool isOnline =
+    final bool hasConnection =
         connectivityResult.contains(ConnectivityResult.mobile) ||
         connectivityResult.contains(ConnectivityResult.wifi) ||
         connectivityResult.contains(ConnectivityResult.ethernet);
 
-    if (!isOnline) {
-      // [Offline]
+    if (!hasConnection) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -63,7 +61,6 @@ class _SinkronisasiScreenState extends State<SinkronisasiScreen>
       return;
     }
 
-    // [Online]
     final pendingRows = await DbHelper.instance.getPelangganByStatus(0);
     if (pendingRows.isEmpty) {
       if (!mounted) return;

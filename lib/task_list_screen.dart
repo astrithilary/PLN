@@ -25,15 +25,13 @@ class _TaskListScreenState extends State<TaskListScreen> {
     setState(() => isLoading = true);
 
     try {
-      // 1. Cek Koneksi
       final connectivityResult = await Connectivity().checkConnectivity();
-      final bool isOnline =
+      final bool hasConnection =
           connectivityResult.contains(ConnectivityResult.mobile) ||
           connectivityResult.contains(ConnectivityResult.wifi) ||
           connectivityResult.contains(ConnectivityResult.ethernet);
 
-      if (isOnline) {
-        // [Online] Request Tugas API
+      if (hasConnection) {
         final dataTugas = await ApiService.fetchTugas();
 
         if (dataTugas != null) {
@@ -58,7 +56,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
           // Simpan Cache di SQLite
           await DbHelper.instance.saveBatchTugas(dbList);
         } else {
-          // Jika gagal fetch API namun online, ambil dari cache (fallback)
+          // Jika gagal fetch API, ambil dari cache (fallback)
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -70,7 +68,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
           }
         }
       } else {
-        // [Offline] Tampilkan pesan info
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -80,7 +77,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
         }
       }
 
-      // Ambil data (Tampilkan Data) dari SQLite baik online maupun offline
       final dataLokal = await DbHelper.instance.getTugas();
 
       setState(() {

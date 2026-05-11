@@ -1,8 +1,5 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'auth_storage.dart';
-import 'db_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,49 +10,19 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String _username = 'User';
-  int _pendingCount = 0;
-  bool _isOnline = false;
-  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
 
   @override
   void initState() {
     super.initState();
     _loadData();
-    _initConnectivity();
-  }
-
-  void _initConnectivity() async {
-    final connectivityResult = await Connectivity().checkConnectivity();
-    _updateConnectionStatus(connectivityResult);
-
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
-      _updateConnectionStatus,
-    );
-  }
-
-  void _updateConnectionStatus(List<ConnectivityResult> result) {
-    setState(() {
-      _isOnline =
-          result.contains(ConnectivityResult.mobile) ||
-          result.contains(ConnectivityResult.wifi) ||
-          result.contains(ConnectivityResult.ethernet);
-    });
   }
 
   Future<void> _loadData() async {
     final username = await AuthStorage.getUsername();
-    final pendingRows = await DbHelper.instance.getPelangganByStatus(0);
 
     setState(() {
       _username = username ?? 'User';
-      _pendingCount = pendingRows.length;
     });
-  }
-
-  @override
-  void dispose() {
-    _connectivitySubscription.cancel();
-    super.dispose();
   }
 
   @override
@@ -131,49 +98,6 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // Status Card
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: _isOnline
-                            ? const [Color(0xFF0AA06E), Color(0xFF20C997)]
-                            : const [Color(0xFFE53935), Color(0xFFE35D5B)],
-                      ),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              _isOnline
-                                  ? Icons.check_circle_outline
-                                  : Icons.wifi_off_outlined,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _isOnline ? 'Online' : 'Offline',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '$_pendingCount Data Pending',
-                          style: const TextStyle(color: Color(0xFFEFFFF8)),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
                   // Menu Grid
                   Expanded(
                     child: GridView.count(
